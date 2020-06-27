@@ -51,11 +51,23 @@ const userSchema = mongoose.Schema({
     ]
 });
 
+//restrict data to show on each call
+userSchema.methods.toJSON = function () {
+    const user = this;
+    const userObject = user.toObject();
+
+    delete userObject.password;
+    delete userObject.tokens;
+
+    return userObject;
+}
+
 //generate auth token during logging in
 userSchema.methods.generateAuthToken = async function () {
     const user = this;
     //need to convert _id to string as its objectID
     const token = jwt.sign({ _id : user._id.toString() }, "taskmanagerapp");
+    console.log(token);
     //save token on user
     user.tokens = user.tokens.concat({ token });
     await user.save();

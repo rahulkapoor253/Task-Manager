@@ -30,6 +30,33 @@ router.post('/users/login', async (req, res) => {
 
 });
 
+router.post('/users/logout', auth, async (req, res) => {
+    //we will check the token from the tokens array and filter it out when found
+    try{
+        req.user.tokens = req.user.tokens.filter((token) => {
+            return token.token !== req.token
+        });
+        await req.user.save();
+        res.send("user logged out");
+
+    }catch(ex) {
+        res.status(500).send("Something went wrong while logging you out...");
+    }
+
+});
+
+router.post('/users/logoutAll', auth, async (req, res) => {
+    try{
+        req.user.tokens = [];
+        await req.user.save();
+        res.send("all sessions logged out");
+
+    }catch(ex) {
+        res.status(500).send("Something went wrong while logging you out of all sessions...");
+    }
+
+});
+
 router.post('/users', async (req, res) => {
     const user = new User(req.body);
     //returns a promise
@@ -45,29 +72,8 @@ router.post('/users', async (req, res) => {
 
 });
 
-router.get('/users/:id', async (req, res) => {
-    console.log(req.params.id);
-    const _id = req.params.id;
-    try{
-        const user = await User.findById(_id);
-        if(user) {
-            console.log(user);
-            res.send(user);
-        }
-        else {
-            res.status(400);
-            res.send("No user found with this id : " + _id);
-        }
-    }
-    catch(ex) {
-        res.status(500);
-        res.send(ex);
-    }
-
-});
-
-router.patch('/users/:id', async (req, res) => {
-    const _id = req.params.id;
+//we can only update our own profile
+router.patch('/users/me', auth, async (req, res) => {
     //restriction on key updates
     const updates = Object.keys(req.body);
     const allowedUpdates = ['name', 'email', 'password', 'age'];
@@ -79,22 +85,10 @@ router.patch('/users/:id', async (req, res) => {
         return res.status(400).send("Invalid key update");
     }
 
-    //in findidandupdate we just provide the fields that we want to be updated
     try{
-        //need to change logic of updating as we need to run 'save' to fire middleware to hash password
-        const user = await User.findById(_id);
-        updates.forEach((update) => user[update] = req.body[update] );
-        await user.save();
-        //const updatedUser = await User.findByIdAndUpdate(_id, req.body, { new : true, runValidators : true });
-        //we can have error, no user with id, update success
-        if(!user) {
-            res.status(400);
-            res.send("Something went wrong");
-        }
-        else {
-            console.log(user);
-            res.send(user);
-        }
+        updates.forEach((update) => req.user[update] = req.body[update] );
+        await req.user.save();
+       res.send(req.user);
     }
     catch(ex) {
         res.status(500);
@@ -103,17 +97,12 @@ router.patch('/users/:id', async (req, res) => {
 
 });
 
-router.delete('/users/:id', async (req, res) => {
-    const _id = req.params.id;
-
+//we will not use :id as we dont want a user to affect others data
+router.delete('/users/me', auth, async (req, res) => {
     try{
-        const deletedUser = await User.findByIdAndDelete(_id);
-        if(!deletedUser){
-            res.status(400).send("No user with id : " + _id + " to delete");
-        }
-        else {
-            res.send(deletedUser);
-        }
+        await req.user.remove();
+        console.log(req.user);
+        res.send("user deleted");
     }catch(ex) {
         res.status(500).send(ex);
     }
