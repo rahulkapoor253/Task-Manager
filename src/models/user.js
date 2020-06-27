@@ -51,6 +51,13 @@ const userSchema = mongoose.Schema({
     ]
 });
 
+//we can also create virtual relationship between user/task
+userSchema.virtual('tasks', {
+    ref : 'Task',
+    localField : '_id',
+    foreignField : 'owner'
+});
+
 //restrict data to show on each call
 userSchema.methods.toJSON = function () {
     const user = this;
