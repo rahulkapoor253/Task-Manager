@@ -78,15 +78,19 @@ router.patch('/users/:id', async (req, res) => {
 
     //in findidandupdate we just provide the fields that we want to be updated
     try{
-        const updatedUser = await User.findByIdAndUpdate(_id, req.body, { new : true, runValidators : true });
+        //need to change logic of updating as we need to run 'save' to fire middleware to hash password
+        const user = await User.findById(_id);
+        updates.forEach((update) => user[update] = req.body[update] );
+        await user.save();
+        //const updatedUser = await User.findByIdAndUpdate(_id, req.body, { new : true, runValidators : true });
         //we can have error, no user with id, update success
-        if(!updatedUser) {
+        if(!user) {
             res.status(400);
             res.send("Something went wrong");
         }
         else {
-            console.log(updatedUser);
-            res.send(updatedUser);
+            console.log(user);
+            res.send(user);
         }
     }
     catch(ex) {
