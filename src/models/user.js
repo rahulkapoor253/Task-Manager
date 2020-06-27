@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+var jwt = require('jsonwebtoken');
 
 //to use middleware we need a schema in mongoose
 const userSchema = mongoose.Schema({
@@ -11,6 +12,7 @@ const userSchema = mongoose.Schema({
     },
     email : {
         type : String,
+        unique : true,
         required : true,
         trim : true,
         lowercase : true,
@@ -38,8 +40,45 @@ const userSchema = mongoose.Schema({
                 throw new Error("age cant be zero or negative");
             }
         }
-    }
+    },
+    tokens : [
+        {
+            token : {
+                type : String,
+                required : true
+            }
+        }
+    ]
 });
+
+//generate auth token during logging in
+userSchema.methods.generateAuthToken = async function () {
+    const user = this;
+    //need to convert _id to string as its objectID
+    const token = jwt.sign({ _id : user._id.toString() }, "taskmanagerapp");
+    //save token on user
+    user.tokens = user.tokens.concat({ token });
+    await user.save();
+
+    return token;
+}
+
+//verify user email & password during login
+userSchema.statics.findByCredentials = async (email, password) => {
+    const user = await User.findOne({ email });
+    if(!user) {
+        throw new Error("no user with this email : " + email);
+    }
+    
+    //it returns a boolean
+    const isMatched = await bcrypt.compare(password, user.password);
+    if(!isMatched) {
+        throw new Error("incorrect password supplied. Try again...");
+    }
+   
+    //if all the supplied creds match
+    return user;
+};
 
 //it is called before save operation is performed
 userSchema.pre('save', async function(next) {

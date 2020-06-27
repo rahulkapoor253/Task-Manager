@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/user');
 const router = new express.Router();
+const auth = require('../middleware/auth');
 
 // //test router
 // router.get('/test', (req, res) => {
@@ -8,22 +9,23 @@ const router = new express.Router();
 // });
 
 //---------------User Routes------------------------
-router.get('/users', async (req, res) => {
+router.get('/users/me', auth, async (req, res) => {
     //to handle if any error occurs
+   res.send(req.user);
+
+});
+
+router.post('/users/login', async (req, res) => {
     try{
-        const users = await User.find({});
-        if(users.length > 0) {
-            console.log(users);
-            res.send(users);
-        }
-        else {
-            res.status(400);
-            res.send("No user found");
-        }
-    }
-    catch(ex) {
-        res.status(500);
-        res.send(ex);
+        //custom model functions
+        const user = await User.findByCredentials(req.body.email, req.body.password);
+        console.log("user found");
+        const token = await user.generateAuthToken();
+
+        console.log({ user, token });
+        res.send({ user, token });
+    }catch(ex) {
+        res.status(400).send(ex);
     }
 
 });
@@ -33,7 +35,8 @@ router.post('/users', async (req, res) => {
     //returns a promise
     try{
         await user.save();
-        res.send(user);
+        const token = await user.generateAuthToken();
+        res.send({ user, token });
     }
     catch(ex) {
         res.status(400);
