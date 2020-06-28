@@ -50,7 +50,7 @@ const userSchema = mongoose.Schema({
             }
         }
     ]
-});
+}, { timestamps : true });
 
 //we can also create virtual relationship between user/task
 userSchema.virtual('tasks', {
