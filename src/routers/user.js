@@ -2,6 +2,7 @@ const express = require('express');
 const User = require('../models/user');
 const router = new express.Router();
 const auth = require('../middleware/auth');
+const sharp = require('sharp');
 const multer = require('multer');
 var upload = multer({ 
     limits : {
@@ -125,7 +126,9 @@ router.delete('/users/me', auth, async (req, res) => {
 //authenticate the file upload
 //upload file route using multer
 router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
-    req.user.avatar = req.file.buffer;
+    //before saving image we need to resize it
+    const imageBuffer = await sharp(req.file.buffer).resize(250, 250).png().toBuffer();
+    req.user.avatar = imageBuffer;
     await req.user.save();
     console.log("file upload successfuly");
     res.send();
@@ -140,5 +143,23 @@ router.delete('/users/me/avatar', auth, async (req, res) => {
     await req.user.save();
     res.send();
 } );
+
+//get user avatar
+router.get('/users/:id/avatar', async (req, res) => {
+    try{
+        const user = await User.findById(req.params.id);
+        if(!user || !user.avatar) {
+            throw new Error("user or avatar related to user not found. Try again...");
+        }
+        else {
+            res.set('Content-Type', 'image/png');
+            res.send(user.avatar);
+        }
+
+    }catch(ex) {
+        res.status(404).send(ex);
+    }
+
+});
 
 module.exports = router;
