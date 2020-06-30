@@ -7,7 +7,7 @@ const auth = async (req, res, next) => {
         const token = req.header("Authorization").replace('Bearer ', '');
         console.log(token);
         //check validity of token
-        const decoded = jwt.verify(token, "taskmanagerapp");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         //it will verify from the pushed tokens
         const user = await User.findOne({ _id : decoded._id, 'tokens.token' : token });
 

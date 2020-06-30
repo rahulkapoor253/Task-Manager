@@ -78,7 +78,7 @@ userSchema.methods.toJSON = function () {
 userSchema.methods.generateAuthToken = async function () {
     const user = this;
     //need to convert _id to string as its objectID
-    const token = jwt.sign({ _id : user._id.toString() }, "taskmanagerapp");
+    const token = jwt.sign({ _id : user._id.toString() }, process.env.JWT_SECRET);
     console.log(token);
     //save token on user
     user.tokens = user.tokens.concat({ token });
