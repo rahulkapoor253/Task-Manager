@@ -49,7 +49,10 @@ const userSchema = mongoose.Schema({
                 required : true
             }
         }
-    ]
+    ],
+    avatar : {
+        type : Buffer
+    }
 }, { timestamps : true });
 
 //we can also create virtual relationship between user/task
@@ -64,6 +67,7 @@ userSchema.methods.toJSON = function () {
     const user = this;
     const userObject = user.toObject();
 
+    //hidden fields
     delete userObject.password;
     delete userObject.tokens;
 
