@@ -32,11 +32,16 @@ beforeEach(async () => {
 
 //post a new user
 test('signup a new user', async () => {
-    await request(app).post('/users').send({
+    const response = await request(app).post('/users').send({
         name : 'Rahul Kapoor',
         email : 'rahul123@gmail.com',
         password : 'qwerty123'
     }).expect(200)
+
+    //make assertions on the response object and verify data
+    const user = await User.findById(response.body.user._id);
+    expect(user).not.toBeNull();
+    expect(response.body.user.name).toBe('Rahul Kapoor');
 });
 
 //user login success
@@ -79,6 +84,9 @@ test('fetch user profile', async () => {
     .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
     .send()
     .expect(200)
+
+    const user = await User.findById(userId);
+    expect(user).toBeNull();
 } );
 
 //delete user failure without setting auth token
